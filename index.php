@@ -1,102 +1,81 @@
-<?php include 'connection.php'; ?>
+<?php 
+include 'connection.php';
+include 'header.php';
+?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portfolio Website - Overzichtspagina</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous" />
-</head>
-
-<body>
-
-  <style>
-    body {
-      background-color: #EFABFF
-    }
-  </style>
-
-  <main>
+<div class="header-section">
     <div class="container">
-      <?php
+        <h1>Keuzemodules</h1>
+        <p>Kies een module uit de onderstaande opties om meer te leren</p>
+    </div>
+</div>
 
-      $stmt = $conn->prepare("SELECT id, title, desc_short, desc_long, type, datum FROM projecten");
-      $conn = new PDO("mysql:host=$servername;dbname=projecten", $username, $password);
-      $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-      $stmt->execute();
-
-      // set the resulting array to associative
-      $result = $stmt->setFetchMode(PDO::FETCH_ASSOC);
-      foreach ($stmt->fetchAll() as $k => $v) {
-        // echo $v["id"];  
-      }
-
-      ?>
-
-      <div class="d-flex justify-content-center align-items-center m-4">
-        <nav aria-label="search and filter">
-          <input type="search" class="form-control ds-input" id="search-input" placeholder="Search..."
-            aria-label="Search for..." autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"
-            aria-expanded="false" aria-owns="algolia-autocomplete-listbox-0" dir="auto"
-            style="position: relative; vertical-align: top;">
-        </nav>
-      </div>
-
-
-      <div class="row row-cols-1 row-cols-sm-1 row-cols-md-1 g-1 projects">
-
-        <?php
-        $stmt = $conn->prepare("SELECT desc_short FROM projecten");
-        $stmt->execute();
-
-
-
-        for ($a = 1; $a < 6; $a++) { ?>
-
-          <div id="project <?php echo $a; ?>" class="project card shadow-sm card-body m-2">
-            <div class="card-text">
-              <h2>Titel van project
-                <?php echo $a; ?>
-              </h2>
-              <div>Hier komt een korte omschrijving van het project.</div>
-
-              <a href="detail.php?id=<?php echo $a; ?> "> <button type="button" class="btn btn-sm btn-outline-secondary">
-                  View
-                </button></a>
-              <button type="button" class="btn btn-sm btn-outline-secondary">
-                Edit
-              </button>
-              <button type="button" class="btn btn-sm btn-outline-secondary">
-                Delete
-              </button>
+<div class="container">
+    <div class="search-section">
+        <form action="" method="get" class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input name="search" type="search" class="form-control" placeholder="Zoeken..." 
+                           value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                    <button type="submit" class="btn btn-outline-secondary">Zoeken</button>
+                </div>
             </div>
+        </form>
+    </div>
 
-          </div>
+    <?php
+    try {
+        if (isset($_GET["search"])) {
+            $searchbtn = "%" . $_GET["search"] . "%";
+            $stmt = $conn->prepare("SELECT * FROM projecten WHERE title LIKE :search ORDER BY id DESC");
+            $stmt->bindParam(':search', $searchbtn);
+        } else {
+            $stmt = $conn->prepare("SELECT * FROM projecten ORDER BY id DESC");
+        }
+        $stmt->execute();
+    ?>
 
-        <?php }
-        ; ?>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+        <?php while($row = $stmt->fetch(PDO::FETCH_ASSOC)) { ?>
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-img-container">
+                        <?php if(!empty($row['image_url'])): ?>
+                            <img src="<?php echo htmlspecialchars($row['image_url']); ?>" alt="<?php echo htmlspecialchars($row['title']); ?>">
+                        <?php else: ?>
+                            <img src="https://via.placeholder.com/300x225" alt="Placeholder">
+                        <?php endif; ?>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title"><?php echo htmlspecialchars($row['title']); ?></h5>
+                        <p class="card-text"><?php echo htmlspecialchars($row['desc_short']); ?></p>
+                        <div class="d-flex justify-content-start flex-wrap">
+                            <a href="detail.php?id=<?php echo $row['id']; ?>" class="btn btn-outline-secondary btn-sm">
+                                Bekijken
+                            </a>
+                            <?php if (isset($_SESSION["username"])): ?>
+                                <a href="add.php?id=<?php echo $row['id']; ?>" class="btn btn-outline-secondary btn-sm">
+                                    Toevoegen
+                                </a>
+                                <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-outline-secondary btn-sm">
+                                    Bewerken
+                                </a>
+                                <a href="delete.php?id=<?php echo $row['id']; ?>" class="btn btn-outline-secondary btn-sm">
+                                    Verwijderen
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php } ?>
+    </div>
 
-        <div class="d-flex justify-content-center align-items-center m-4">
-          <nav aria-label="Page navigation example">
-            <ul class="pagination">
-              <li class="page-item">
-                <a class="page-link" href="#">Previous</a>
-              </li>
-              <li class="page-item"><a class="page-link" href="#">1</a></li>
-              <li class="page-item"><a class="page-link" href="#">2</a></li>
-              <li class="page-item"><a class="page-link" href="#">3</a></li>
-              <li class="page-item"><a class="page-link" href="#">Next</a></li>
-            </ul>
-          </nav>
-        </div>
+    <?php
+    } catch(PDOException $e) {
+        echo "Error: " . $e->getMessage();
+    }
+    ?>
+</div>
 
-  </main>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-    crossorigin="anonymous"></script>
-</body>
-
-</html>
+<?php include 'footer.php'; ?>
